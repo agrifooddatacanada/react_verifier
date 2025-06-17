@@ -28,8 +28,8 @@ This project demonstrates how to use the `postMessage` API to communicate betwee
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
-   cd iframe-communication-demo
+   git clone https://github.com/agrifooddatacanada/react_verifier.git
+   cd react_verifier
    ```
 
 2. Install dependencies:
@@ -43,7 +43,7 @@ This project demonstrates how to use the `postMessage` API to communicate betwee
    npm run dev
    ```
 
-## Usage
+## Code Explanation
 
 ### Sending Data to the Iframe
 
@@ -71,7 +71,7 @@ window.addEventListener('message', receiveData)
 
 function receiveData(event) {
   // Check the origin of the message for security
-  if (event.origin !== 'http://your-iframe-origin.com') {
+  if (event.origin !== 'https://www.semanticengine.org/') {
     return // Ignore messages from unknown origins
   }
 
@@ -138,10 +138,6 @@ function receiveData(event) {
 - **Cleanup**: After triggering the download, the anchor is removed from the document, and the URL is revoked to free up resources.
 
 This example demonstrates how to effectively handle CSV data received from an iframe and provide a user-friendly way to download it. Adjust the filename and any additional processing as needed for your application.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
 
 ## License
 

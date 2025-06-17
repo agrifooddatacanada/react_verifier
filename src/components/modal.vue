@@ -81,7 +81,6 @@ async function loadAndSendFile() {
       iframeRef.value.contentWindow.postMessage(
         {
           type: 'JSON_SCHEMA',
-          fileName: 'randomName',
           data: file, // Send the JSON data directly
         },
         '*',
@@ -93,6 +92,10 @@ async function loadAndSendFile() {
 }
 
 async function receiveData(event) {
+  if (event.origin !== 'http://localhost:3000') {
+    return
+  }
+
   if (event.data.type === 'VERIFIED_DATA') {
     let csvData = event.data.data
 
