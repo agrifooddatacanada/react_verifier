@@ -1,0 +1,12 @@
+{
+  "schemas": [
+    {
+      "name": "Carcass_Schema.json",
+      "path": "src/assets/files/CSV_OCA_package.json"
+    },
+    {
+      "name": "Soil_Schema.json",
+      "path": "src/assets/files/soil_package_1.json"
+    }
+  ]
+}
