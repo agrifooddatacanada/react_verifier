@@ -22,7 +22,7 @@ const props = defineProps({
   },
   validatorUrl: {
     type: String,
-    default: 'http://localhost:3000/oca-data-validator',
+    default: 'http://localhost:3000/oca-data-verifier',
   },
 })
 
