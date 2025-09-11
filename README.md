@@ -1,143 +1,175 @@
-**Note**: This application is currently under active development. Features and functionality may change as development progresses.
+## OCA Composer Iframe Embed
 
-# React Verifier
+### Overview
 
-A React application for verifying data against predefined schemas using an embedded React-based verifier.
+This project demonstrates how to embed the OCA Composer into your own website using an iframe in a front-end application. The app loads a local JSON schema, sends it to the embedded OCA Composer via `postMessage`, and receives validated data back (as CSV) from the iframe for display and further use.
 
-# Iframe Communication Demo
+### Features
 
-## Overview
+- **Schema selection**: Choose a JSON schema from `src/assets/config/schemas.json`.
+- **Embedded Composer**: Opens OCA Composer inside an iframe.
+- **One-click send**: Sends the selected schema to the Composer using `postMessage`.
+- **Validated output**: Receives validated CSV data from the Composer and renders it in a table.
 
-This project demonstrates how to use the `postMessage` API to communicate between a front-end application and an iframe. It allows you to send and receive data securely across different origins, making it suitable for various front-end frameworks and libraries.
+### Project Structure (key files)
 
-## Features
+- `src/App.vue`: Top-level UI; selects a schema and displays results.
+- `src/components/ValidatorCard.vue`: Hosts the iframe and handles `postMessage` send/receive.
+- `src/components/DataTable.vue`: Renders the returned CSV data as a table.
+- `src/assets/config/schemas.json`: Lists available schema files to load and send.
 
-- **Dynamic File Selection**: Select JSON files from a dropdown to load them into the application.
-- **Modal Display**: Open a modal to display the selected file content in an iframe.
-- **Data Reception**: Receive data from the iframe using the `postMessage` API.
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js and npm installed on your machine.
-- A basic understanding of HTML, CSS, and JavaScript.
+- Node.js and npm
+- An accessible OCA Composer instance (default expected at `http://localhost:3000/oca-data-verifier`).
+  - If your Composer runs elsewhere, update the `validatorUrl` prop in `ValidatorCard.vue` or pass a different value when using the component.
 
-### Installation
+### Install & Run
 
-1. Clone the repository:
+1. Clone the repository and enter the project folder:
 
-   ```bash
-   git clone https://github.com/agrifooddatacanada/react_verifier.git
-   cd react_verifier
-   ```
+```bash
+git clone <your-repo-url>
+cd vue-iframe-demo
+```
 
 2. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. Start the development server:
-   ```bash
-   npm run dev
-   ```
 
-## Code Explanation
+```bash
+npm run dev
+```
 
-### Sending Data to the Iframe
+4. Ensure OCA Composer is running and accessible at the URL configured in `ValidatorCard.vue` (default: `http://localhost:3000/oca-data-verifier`).
 
-To send data to the iframe, use the `postMessage` method on the iframe's `contentWindow`. Here's an example:
+---
 
-```javascript
-function sendDataToIframe(data) {
-  const iframe = document.getElementById('myIframe') // Replace with your iframe's ID
-  iframe.contentWindow.postMessage(
-    {
-      type: 'LOAD_FILE',
-      data: data,
-    },
-    '*', // Specify the target origin for security
-  )
+## Quick Start: Run OCA Composer Locally (required)
+
+You need a local (or hosted) OCA Composer instance for the iframe to connect to. To run it locally:
+`https://github.com/agrifooddatacanada/OCA_Composer/tree/feat/iframe-file-listener`
+
+1. Clone or download the OCA Composer project from GitHub and open it in your terminal.
+2. Create a `.env` file in the Composer project root and add:
+
+```
+REACT_APP_GA_ID=0
+```
+
+3. Install dependencies:
+
+```
+npm install
+```
+
+4. In the Composer project directory, start the development server:
+
+```bash
+npm start
+```
+
+This runs the Composer in development mode at `http://localhost:3000`. The page reloads on edits, and you will see any errors/warnings in the console.
+
+Once Composer is running at `http://localhost:3000`, the front-end app’s iframe will load the Composer route defined by `validatorUrl` (default: `http://localhost:3000/oca-data-verifier`). If your Composer runs on a different host/port or path, either change `validatorUrl` in `src/components/ValidatorCard.vue` or pass it as a prop when using the component.
+
+---
+
+## Configuration
+
+Schemas are configured in `src/assets/config/schemas.json`:
+
+```json
+{
+  "schemas": [
+    { "name": "Carcass_Schema.json", "path": "src/assets/files/CSV_OCA_package.json" },
+    { "name": "Soil_Schema.json", "path": "src/assets/files/soil_package_1.json" }
+  ]
 }
 ```
 
-### Receiving Data from the Iframe
+Each `path` should point to a local JSON file that will be fetched and sent to the Composer.
 
-To receive data from the iframe, set up an event listener in your JavaScript code. This is typically done in the `window` object:
+---
+
+## How the Iframe Integration Works
+
+The integration is implemented in `src/components/ValidatorCard.vue`.
+
+### Sending the schema to OCA Composer
+
+When the iframe loads, the component posts the selected schema to the Composer:
 
 ```javascript
-window.addEventListener('message', receiveData)
+iframeRef.value.contentWindow.postMessage(
+  {
+    type: 'JSON_SCHEMA',
+    data: JSON.parse(JSON.stringify(fileContent.value)),
+  },
+  '*', // For production, prefer the exact origin of your Composer instance
+)
+```
 
+You can improve security by replacing `'*'` with the Composer origin (for example, `'http://localhost:3000'`).
+
+### Receiving validated data from OCA Composer
+
+The component listens for messages from the iframe and checks the origin:
+
+```javascript
 function receiveData(event) {
-  // Check the origin of the message for security
-  if (event.origin !== 'https://www.semanticengine.org/') {
-    return // Ignore messages from unknown origins
+  if (event.origin !== 'http://localhost:3000') {
+    return
   }
-
-  // Check the type of the message
   if (event.data.type === 'VERIFIED_DATA') {
     const csvData = event.data.data
-    // Handle the CSV data as needed
-    console.log('Received CSV data:', csvData)
+    emit('send-file', csvData)
+    emit('close')
   }
 }
 ```
 
-### Security Considerations
+The received CSV string is then rendered by `DataTable.vue`.
 
-- **Origin Check**: Always check the `event.origin` in the `receiveData` function to ensure that the message is coming from a trusted source. This prevents potential security vulnerabilities.
-- **Target Origin**: When sending messages to the iframe, specify the target origin as the second argument in `postMessage` to restrict the message to a specific domain.
+---
 
-## Example
+## Usage Flow
 
-In the `Modal.js` component, the iframe is set up to receive data from the parent window. When a file is selected, the content is sent to the iframe using `postMessage`. The iframe listens for messages and processes the received data accordingly.
+1. Select a schema from the dropdown in the app.
+2. Click "Submit" to open the OCA Composer inside the iframe.
+3. Complete the validation inside the Composer.
+4. The Composer sends back a CSV string, which is displayed as a table in the app.
 
-## Example Usage
+---
 
-### Handling CSV Data Received from the Iframe
+## Security Notes
 
-When you receive a CSV string from the iframe, you can handle it in various ways. Below is an example of how to download the received CSV data as a CSV file:
+- **Origin checks**: Always validate `event.origin` to ensure messages are from your trusted Composer host.
+- **Target origin**: Prefer passing the exact Composer origin as the second argument to `postMessage` instead of `'*'`.
 
-```javascript
-function receiveData(event) {
-  // Check the origin of the message for security
-  if (event.origin !== 'http://your-iframe-origin.com') {
-    return // Ignore messages from unknown origins
-  }
+---
 
-  // Check the type of the message
-  if (event.data.type === 'CSV_STRING') {
-    const csvData = event.data.data // Assuming this is the CSV string received
+## Branding and White Labeling
 
-    // Create a Blob from the CSV string
-    const blob = new Blob([csvData], { type: 'text/csv' })
+OCA Composer supports white labeling so you can apply your own branding (logos, colors, titles, favicons, and other UI elements). For setup steps and the full list of options, please refer to the Composer project's README in the OCA Composer repository. Once configured and served, your customized Composer will load in the iframe without additional changes to this front-end app.
 
-    // Create a URL for the Blob
-    const url = URL.createObjectURL(blob)
+---
 
-    // Create a temporary anchor element to trigger the download
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'validatedData.csv' // Specify the filename for the download
-    document.body.appendChild(a) // Append the anchor to the body
-    a.click() // Trigger the download
+## Troubleshooting
 
-    // Clean up: remove the anchor and revoke the URL
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-}
-```
+- **Blank iframe or network error**: Verify `validatorUrl` points to a running OCA Composer and that the URL is reachable from your browser.
+- **No data received**: Confirm the Composer posts messages with `type: 'VERIFIED_DATA'` and that `event.origin` matches your Composer origin.
+- **Different ports/origins**: If running on different hosts, update both the `validatorUrl` and the origin checks in `ValidatorCard.vue` accordingly.
 
-### Explanation
-
-- **Blob Creation**: A `Blob` is created from the CSV string, specifying the MIME type as `text/csv`.
-- **URL Creation**: A URL is generated for the Blob using `URL.createObjectURL(blob)`.
-- **Download Trigger**: A temporary anchor (`<a>`) element is created, its `href` is set to the generated URL, and its `download` attribute is set to the desired filename. The anchor is then appended to the document body and clicked to trigger the download.
-- **Cleanup**: After triggering the download, the anchor is removed from the document, and the URL is revoked to free up resources.
-
-This example demonstrates how to effectively handle CSV data received from an iframe and provide a user-friendly way to download it. Adjust the filename and any additional processing as needed for your application.
+---
 
 ## License
 
